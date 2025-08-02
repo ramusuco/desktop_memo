@@ -20,7 +20,7 @@ DEFAULT_FILE_NAMES = [f"memo_{i+1}.txt" for i in range(MAX_FILES)]
 WINDOW_TITLE = "Task Memo"
 DEFAULT_FONT = ("Meiryo", 10)
 TEXT_BOX_HEIGHT = 18
-TEXT_BOX_WIDTH = 50
+TEXT_BOX_WIDTH = 60  # Slightly wider for better readability with wrap=none
 SAVE_BUTTON_LABEL = "Save File"
 APPLY_BUTTON_LABEL = "Apply to Wallpaper"
 RESOLUTION_LABEL = "Resolution:"
@@ -120,8 +120,8 @@ Resources Needed:
         """Save content as a template"""
         if template_name.strip():
             template_file = TEMPLATES_DIR / f"{template_name.strip()}.txt"
-            formatted_content = FileManager.format_text_with_newlines(content)
-            template_file.write_text(formatted_content, encoding="utf-8")
+            # Save template as-is without auto-formatting
+            template_file.write_text(content, encoding="utf-8")
 
 
 class FileManager:
@@ -143,9 +143,24 @@ class FileManager:
     @staticmethod
     def save_memo_file(content: str, filename: str) -> None:
         """Save content to specified memo file"""
-        formatted_text = FileManager.format_text_with_newlines(content)
+        # Save content as-is without auto-formatting to preserve user's line breaks
         file_path = FileManager.get_memo_file_path(filename)
-        file_path.write_text(formatted_text, encoding="utf-8")
+        file_path.write_text(content, encoding="utf-8")
+    
+    @staticmethod
+    def save_memo_file_with_wrapping(content: str, filename: str, image_size: tuple[int, int]) -> str:
+        """Save content with automatic line wrapping based on image size"""
+        # Calculate maximum characters per line for the given resolution
+        max_chars = memo.calculate_max_chars_per_line(image_size)
+        
+        # Apply simple character-based wrapping
+        wrapped_content = memo.wrap_text_to_chars(content, max_chars)
+        
+        # Save the wrapped content
+        file_path = FileManager.get_memo_file_path(filename)
+        file_path.write_text(wrapped_content, encoding="utf-8")
+        
+        return wrapped_content
 
     @staticmethod
     def get_file_display_name(filename: str) -> str:
@@ -154,15 +169,8 @@ class FileManager:
 
     @staticmethod
     def format_text_with_newlines(text: str, line_length: int = LINE_LENGTH) -> str:
-        lines = []
-        for line in text.split("\n"):
-            new_line = ""
-            while len(line) > line_length:
-                new_line += line[:line_length] + "\n"
-                line = line[line_length:]
-            new_line += line
-            lines.append(new_line)
-        return "\n".join(lines)
+        """Legacy function - now returns text as-is to preserve user formatting"""
+        return text
 
 
 class TaskMemoApp:
@@ -248,7 +256,7 @@ class TaskMemoApp:
                 font=DEFAULT_FONT,
                 height=TEXT_BOX_HEIGHT,
                 width=TEXT_BOX_WIDTH,
-                wrap="char",
+                wrap="none",  # Disable auto-wrap to match image output
                 relief="flat",
                 borderwidth=1,
                 undo=True,
@@ -394,14 +402,21 @@ class TaskMemoApp:
         self._update_status(f"✓ Saved {FileManager.get_file_display_name(filename)}")
 
     def _apply_current_tab_to_wallpaper(self):
-        """Apply current tab's content to wallpaper"""
+        """Apply current tab's content to wallpaper with intelligent wrapping"""
         filename, text_box = self._get_current_tab_info()
         content = text_box.get("1.0", "end-1c")
         resolution = self._get_selected_resolution()
         
-        FileManager.save_memo_file(content, filename)
+        # Apply intelligent wrapping and save
+        wrapped_content = FileManager.save_memo_file_with_wrapping(content, filename, resolution)
+        
+        # Update the text box to show the wrapped content
+        text_box.delete("1.0", "end")
+        text_box.insert("1.0", wrapped_content)
+        
+        # Generate wallpaper
         memo.update_wallpaper_from_memo(resolution, filename)
-        self._update_status(f"✓ Applied {FileManager.get_file_display_name(filename)} to wallpaper ({resolution[0]}x{resolution[1]})")
+        self._update_status(f"✓ Applied {FileManager.get_file_display_name(filename)} to wallpaper ({resolution[0]}x{resolution[1]}) with auto-wrap")
 
     def _load_selected_template(self):
         """Load selected template into current tab"""

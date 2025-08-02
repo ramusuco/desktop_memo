@@ -12,6 +12,9 @@ FONT_SIZE = 36
 DEFAULT_IMAGE_SIZE = (1280, 720)
 FONT_COLOR = (0, 0, 0)
 BACKGROUND_COLOR = (255, 255, 255)
+TEXT_MARGIN_LEFT = 200
+TEXT_MARGIN_RIGHT = 50
+TEXT_MARGIN_TOP = 50
 SPI_SET_DESKTOP_WALLPAPER = 20
 
 DEFAULT_MEMO_FILENAME = "memo.txt"
@@ -59,6 +62,44 @@ def get_monitor_resolutions() -> list[tuple[int, int]]:
     return unique_resolutions
 
 
+def calculate_max_chars_per_line(image_size: tuple[int, int]) -> int:
+    """Calculate maximum characters per line based on image size, font size and margins"""
+    width, height = image_size
+    
+    # Available width for text = total width - left margin - right margin
+    available_width = width - TEXT_MARGIN_LEFT - TEXT_MARGIN_RIGHT
+    
+    # For Japanese font (Meiryo Bold), approximate character width calculation
+    # Empirically tested: full-width characters are roughly 0.7 * font_size
+    char_width = FONT_SIZE * 0.7  # Approximate width per character (conservative estimate)
+    
+    # Calculate how many characters can fit
+    max_chars = int(available_width / char_width)
+    
+    # Safety bounds: minimum 10 chars, maximum 200 chars
+    return max(10, min(max_chars, 200))
+
+
+def wrap_text_to_chars(text: str, max_chars_per_line: int) -> str:
+    """Simple character-based text wrapping"""
+    lines = text.split('\n')
+    wrapped_lines = []
+    
+    for line in lines:
+        # If line is shorter than max chars, keep as is
+        if len(line) <= max_chars_per_line:
+            wrapped_lines.append(line)
+        else:
+            # Split line at max_chars_per_line intervals
+            start = 0
+            while start < len(line):
+                end = start + max_chars_per_line
+                wrapped_lines.append(line[start:end])
+                start = end
+    
+    return '\n'.join(wrapped_lines)
+
+
 def update_wallpaper_from_memo(image_size: tuple[int, int] = DEFAULT_IMAGE_SIZE, memo_filename: str = DEFAULT_MEMO_FILENAME) -> None:
     output_file = DATA_DIR / OUTPUT_FILENAME
 
@@ -75,7 +116,7 @@ def update_wallpaper_from_memo(image_size: tuple[int, int] = DEFAULT_IMAGE_SIZE,
     image = Image.new("RGB", image_size, BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype(str(FONT_PATH), FONT_SIZE)
-    draw.multiline_text((200, 50), txt, font=font, fill=FONT_COLOR)
+    draw.multiline_text((TEXT_MARGIN_LEFT, TEXT_MARGIN_TOP), txt, font=font, fill=FONT_COLOR)
 
     image.save(output_file, "BMP")
     print(f"Saved image as '{output_file.name}'.")
