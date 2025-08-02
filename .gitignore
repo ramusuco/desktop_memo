@@ -2,3 +2,4 @@ venv
 dist
 build
 DesktopMemo.spec
+__pycache__
