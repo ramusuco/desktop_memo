@@ -58,18 +58,18 @@ def get_monitor_resolutions() -> List[Tuple[int, int]]:
     return unique_resolutions
 
 
-def update_wallpaper_from_memo(image_size: Tuple[int, int] = IMAGE_SIZE) -> None:
+def update_wallpaper_from_memo(image_size: Tuple[int, int] = IMAGE_SIZE, memo_filename: str = MEMO_FILENAME) -> None:
     output_file = DATA_DIR / OUTPUT_FILENAME
 
     if output_file.exists():
         output_file.unlink()
         print(f"Deleted existing image '{output_file.name}'.")
 
-    memo_file = DATA_DIR / MEMO_FILENAME
+    memo_file = DATA_DIR / memo_filename
     if memo_file.exists():
         txt = memo_file.read_text(encoding="utf-8")
     else:
-        txt = "Memo file not found."
+        txt = f"Memo file '{memo_filename}' not found."
 
     image = Image.new("RGB", image_size, BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
