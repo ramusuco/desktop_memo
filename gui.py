@@ -86,8 +86,8 @@ def apply_memo_to_wallpaper(text_box_content: str, selected_resolution: Tuple[in
     memo.update_wallpaper_from_memo(selected_resolution, filename)
 
 
-def on_tab_changed(event, notebook: ttk.Notebook, status_label: ttk.Label):
-    """Handle tab change event"""
+def update_editing_status(notebook: ttk.Notebook, status_label: ttk.Label):
+    """Update status to show editing state"""
     try:
         current_tab_index = notebook.index(notebook.select())
         filename = DEFAULT_FILE_NAMES[current_tab_index]
@@ -95,6 +95,8 @@ def on_tab_changed(event, notebook: ttk.Notebook, status_label: ttk.Label):
         update_status(status_label, f"● Editing {display_name}")
     except:
         pass
+
+
 
 
 def create_notebook_with_files(window: Tk, status_label: ttk.Label) -> Tuple[ttk.Notebook, dict]:
@@ -133,6 +135,25 @@ def create_notebook_with_files(window: Tk, status_label: ttk.Label) -> Tuple[ttk
         content = read_memo(filename)
         text_box.insert("1.0", content)
         
+        # Reset the modified flag after loading content
+        text_box.edit_modified(False)
+        
+        # Create a more reliable text change detection
+        def on_key_press(event):
+            # Schedule status update for after the key event is processed
+            text_box.after_idle(lambda: update_editing_status(notebook, status_label))
+        
+        def on_paste(event):
+            # Schedule status update for after paste is processed
+            text_box.after_idle(lambda: update_editing_status(notebook, status_label))
+        
+        # Bind multiple events for comprehensive detection
+        text_box.bind("<KeyPress>", on_key_press)
+        text_box.bind("<Control-v>", on_paste)
+        text_box.bind("<Button-2>", on_paste)  # Middle mouse paste
+        text_box.bind("<BackSpace>", on_key_press)
+        text_box.bind("<Delete>", on_key_press)
+        
         # Store text box reference
         text_boxes[filename] = text_box
         
@@ -140,14 +161,7 @@ def create_notebook_with_files(window: Tk, status_label: ttk.Label) -> Tuple[ttk
         display_name = get_file_display_name(filename)
         notebook.add(tab_frame, text=display_name)
     
-    # Bind tab change event
-    notebook.bind("<<NotebookTabChanged>>", lambda event: on_tab_changed(event, notebook, status_label))
-    
-    # Set initial status for first tab
-    if DEFAULT_FILE_NAMES:
-        display_name = get_file_display_name(DEFAULT_FILE_NAMES[0])
-        update_status(status_label, f"● Editing {display_name}")
-    
+    # No automatic status update on startup
     return notebook, text_boxes
 
 
@@ -409,7 +423,7 @@ def create_status_bar(window: Tk) -> ttk.Label:
     
     status_label = ttk.Label(
         status_frame, 
-        text="● Ready - Select a tab and start editing", 
+        text="", 
         relief="sunken", 
         anchor="w",
         padding=(8, 4)
