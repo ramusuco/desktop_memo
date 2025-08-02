@@ -1,6 +1,7 @@
 from pathlib import Path
 import ctypes
 from PIL import Image, ImageDraw, ImageFont
+from typing import List, Tuple
 
 DATA_DIR = Path.home() / "Documents" / "TaskMemo"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -16,7 +17,48 @@ MEMO_FILENAME = "memo.txt"
 OUTPUT_FILENAME = "memo.bmp"
 
 
-def update_wallpaper_from_memo() -> None:
+def get_monitor_resolutions() -> List[Tuple[int, int]]:
+    """Get resolutions of all connected monitors"""
+    import win32api
+    import win32con
+    
+    resolutions = []
+    device_num = 0
+    
+    while True:
+        try:
+            device = win32api.EnumDisplayDevices(None, device_num)
+            if not device.DeviceName:
+                break
+                
+            # Get display settings for this device
+            settings = win32api.EnumDisplaySettings(device.DeviceName, win32con.ENUM_CURRENT_SETTINGS)
+            if settings:
+                width = settings.PelsWidth
+                height = settings.PelsHeight
+                resolutions.append((width, height))
+            
+            device_num += 1
+        except:
+            break
+    
+    # Fallback to primary monitor if no monitors found
+    if not resolutions:
+        user32 = ctypes.windll.user32
+        width = user32.GetSystemMetrics(0)
+        height = user32.GetSystemMetrics(1)
+        resolutions.append((width, height))
+    
+    # Remove duplicates while preserving order
+    unique_resolutions = []
+    for res in resolutions:
+        if res not in unique_resolutions:
+            unique_resolutions.append(res)
+    
+    return unique_resolutions
+
+
+def update_wallpaper_from_memo(image_size: Tuple[int, int] = IMAGE_SIZE) -> None:
     output_file = DATA_DIR / OUTPUT_FILENAME
 
     if output_file.exists():
@@ -29,7 +71,7 @@ def update_wallpaper_from_memo() -> None:
     else:
         txt = "Memo file not found."
 
-    image = Image.new("RGB", IMAGE_SIZE, BACKGROUND_COLOR)
+    image = Image.new("RGB", image_size, BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype(str(FONT_PATH), FONT_SIZE)
     draw.multiline_text((200, 50), txt, font=font, fill=FONT_COLOR)
