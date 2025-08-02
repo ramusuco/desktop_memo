@@ -268,7 +268,7 @@ class TaskMemoApp:
             content = FileManager.read_memo(filename)
             text_box.insert("1.0", content)
             
-            # Create a more reliable text change detection
+            # Create text change detection for status updates only
             def on_key_press(event):
                 # Schedule status update for after the key event is processed
                 text_box.after_idle(lambda: self._update_editing_status())
@@ -395,11 +395,19 @@ class TaskMemoApp:
         return filename, text_box
 
     def _save_current_tab(self):
-        """Save current tab's content to file"""
+        """Save current tab's content to file with automatic line wrapping"""
         filename, text_box = self._get_current_tab_info()
         content = text_box.get("1.0", "end-1c")
-        FileManager.save_memo_file(content, filename)
-        self._update_status(f"✓ Saved {FileManager.get_file_display_name(filename)}")
+        resolution = self._get_selected_resolution()
+        
+        # Apply line wrapping before saving
+        wrapped_content = FileManager.save_memo_file_with_wrapping(content, filename, resolution)
+        
+        # Update the text box to show the wrapped content
+        text_box.delete("1.0", "end")
+        text_box.insert("1.0", wrapped_content)
+        
+        self._update_status(f"✓ Saved {FileManager.get_file_display_name(filename)} with auto-wrap")
 
     def _apply_current_tab_to_wallpaper(self):
         """Apply current tab's content to wallpaper with intelligent wrapping"""
@@ -464,6 +472,7 @@ class TaskMemoApp:
                 self._update_status(f"✓ Template '{template_name}' saved successfully!")
             except Exception as e:
                 self._update_status(f"✗ Failed to save template: {str(e)}")
+
 
 
 def main():

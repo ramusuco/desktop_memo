@@ -63,7 +63,7 @@ def get_monitor_resolutions() -> list[tuple[int, int]]:
 
 
 def calculate_max_chars_per_line(image_size: tuple[int, int]) -> int:
-    """Calculate maximum characters per line based on image size, font size and margins"""
+    """Calculate maximum characters per line with 20-character buffer from right edge"""
     width, height = image_size
     
     # Available width for text = total width - left margin - right margin
@@ -73,11 +73,14 @@ def calculate_max_chars_per_line(image_size: tuple[int, int]) -> int:
     # Empirically tested: full-width characters are roughly 0.7 * font_size
     char_width = FONT_SIZE * 0.7  # Approximate width per character (conservative estimate)
     
-    # Calculate how many characters can fit
-    max_chars = int(available_width / char_width)
+    # Calculate how many characters can fit in available width
+    theoretical_max_chars = int(available_width / char_width)
+    
+    # Subtract 20 characters as buffer from right edge
+    max_chars_with_buffer = theoretical_max_chars - 20
     
     # Safety bounds: minimum 10 chars, maximum 200 chars
-    return max(10, min(max_chars, 200))
+    return max(10, min(max_chars_with_buffer, 200))
 
 
 def wrap_text_to_chars(text: str, max_chars_per_line: int) -> str:
