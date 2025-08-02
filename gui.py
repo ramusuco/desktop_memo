@@ -69,7 +69,9 @@ def create_text_box(window: Tk, text: str) -> ScrolledText:
         width=TEXT_BOX_WIDTH,
         wrap="char",
         relief="flat",
-        borderwidth=1
+        borderwidth=1,
+        undo=True,
+        maxundo=50
     )
     text_box.pack(fill=BOTH, expand=True)
     text_box.insert("1.0", text)
