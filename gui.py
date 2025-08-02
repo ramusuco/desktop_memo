@@ -1,5 +1,5 @@
 from pathlib import Path
-from tkinter import Tk, BOTH, TOP, BOTTOM, LEFT, RIGHT
+from tkinter import Tk, BOTH, TOP, BOTTOM, LEFT, RIGHT, messagebox, simpledialog
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Tuple
@@ -9,6 +9,8 @@ import memo
 # Paths and filenames
 DATA_DIR = Path.home() / "Documents" / "TaskMemo"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+TEMPLATES_DIR = DATA_DIR / "templates"
+TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 MEMO_FILENAME = "memo.txt"
 
 # UI constants
@@ -18,6 +20,9 @@ TEXT_BOX_HEIGHT = 20
 TEXT_BOX_WIDTH = 50
 SAVE_BUTTON_LABEL = "Save"
 RESOLUTION_LABEL = "Resolution:"
+TEMPLATE_LABEL = "Template:"
+SAVE_TEMPLATE_LABEL = "Save as Template"
+LOAD_TEMPLATE_LABEL = "Load Template"
 
 # Formatting constants
 LINE_LENGTH = 30
@@ -84,9 +89,42 @@ def create_control_panel(window: Tk, text_box: ScrolledText) -> None:
     control_frame = ttk.Frame(window)
     control_frame.pack(side=BOTTOM, fill="x", padx=15, pady=10)
     
-    # Resolution selection frame (left side)
+    # Template selection frame (left side)
+    template_frame = ttk.LabelFrame(control_frame, text="Templates", padding=10)
+    template_frame.pack(side=LEFT, fill="x", expand=True, padx=(0, 5))
+    
+    # Template selector
+    available_templates = get_available_templates()
+    template_combobox = ttk.Combobox(
+        template_frame,
+        values=available_templates,
+        state="readonly",
+        width=15,
+        font=DEFAULT_FONT
+    )
+    template_combobox.pack(side=LEFT, padx=(0, 5))
+    
+    # Template load button
+    load_template_button = ttk.Button(
+        template_frame,
+        text="Load",
+        command=lambda: load_selected_template(template_combobox, text_box),
+        width=8
+    )
+    load_template_button.pack(side=LEFT, padx=(0, 5))
+    
+    # Save template button
+    save_template_button = ttk.Button(
+        template_frame,
+        text="Save Template",
+        command=lambda: save_current_as_template(text_box),
+        width=12
+    )
+    save_template_button.pack(side=LEFT)
+    
+    # Resolution selection frame (center)
     resolution_frame = ttk.LabelFrame(control_frame, text="Display Settings", padding=10)
-    resolution_frame.pack(side=LEFT, fill="x", expand=True, padx=(0, 10))
+    resolution_frame.pack(side=LEFT, fill="x", expand=True, padx=(5, 5))
     
     # Resolution selector
     resolutions = memo.get_monitor_resolutions()
@@ -137,6 +175,125 @@ def get_selected_resolution(combobox: ttk.Combobox) -> Tuple[int, int]:
     
     # Fallback to default resolution
     return memo.IMAGE_SIZE
+
+
+def create_default_templates():
+    """Create default templates if they don't exist"""
+    default_templates = {
+        "Daily ToDo": """Today's Tasks:
+□ 
+□ 
+□ 
+
+
+Tomorrow:
+□ 
+□ """,
+        
+        "Meeting Notes": """Meeting: 
+Date: 
+Attendees: 
+
+Agenda:
+1. 
+2. 
+3. 
+
+Action Items:
+□ 
+□ 
+□ """,
+        
+        "Weekly Report": """Week of: 
+
+Completed:
+• 
+• 
+• 
+
+In Progress:
+• 
+• 
+
+Next Week:
+• 
+• 
+ """
+    }
+    
+    for template_name, content in default_templates.items():
+        template_file = TEMPLATES_DIR / f"{template_name}.txt"
+        if not template_file.exists():
+            template_file.write_text(content, encoding="utf-8")
+
+
+def get_available_templates():
+    """Get list of available template files"""
+    create_default_templates()
+    template_files = list(TEMPLATES_DIR.glob("*.txt"))
+    return [f.stem for f in template_files]
+
+
+def load_template(template_name: str) -> str:
+    """Load template content by name"""
+    template_file = TEMPLATES_DIR / f"{template_name}.txt"
+    if template_file.exists():
+        try:
+            return template_file.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            pass
+    return ""
+
+
+def save_template(template_name: str, content: str):
+    """Save content as a template"""
+    if template_name.strip():
+        template_file = TEMPLATES_DIR / f"{template_name.strip()}.txt"
+        formatted_content = format_text_with_newlines(content)
+        template_file.write_text(formatted_content, encoding="utf-8")
+
+
+def load_selected_template(template_combobox: ttk.Combobox, text_box: ScrolledText):
+    """Load selected template into text box"""
+    selected_template = template_combobox.get()
+    if selected_template:
+        template_content = load_template(selected_template)
+        if template_content:
+            # Ask for confirmation before replacing current content
+            if text_box.get("1.0", "end-1c").strip():
+                result = messagebox.askyesno(
+                    "Load Template", 
+                    "This will replace the current content. Continue?"
+                )
+                if not result:
+                    return
+            
+            # Clear current content and load template
+            text_box.delete("1.0", "end")
+            text_box.insert("1.0", template_content)
+        else:
+            messagebox.showerror("Error", f"Could not load template '{selected_template}'")
+
+
+def save_current_as_template(text_box: ScrolledText):
+    """Save current text content as a new template"""
+    current_content = text_box.get("1.0", "end-1c").strip()
+    if not current_content:
+        messagebox.showwarning("Warning", "Cannot save empty content as template")
+        return
+    
+    template_name = simpledialog.askstring(
+        "Save Template", 
+        "Enter template name:",
+        initialvalue="My Template"
+    )
+    
+    if template_name:
+        try:
+            save_template(template_name, current_content)
+            messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
 
 
 def create_window() -> Tk:
