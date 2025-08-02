@@ -1,23 +1,24 @@
+from __future__ import annotations
+
 from pathlib import Path
 import ctypes
 from PIL import Image, ImageDraw, ImageFont
-from typing import List, Tuple
 
 DATA_DIR = Path.home() / "Documents" / "TaskMemo"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 FONT_PATH = Path(r"C:\Windows\Fonts\meiryob.ttc")
 FONT_SIZE = 36
-IMAGE_SIZE = (1280, 720)
+DEFAULT_IMAGE_SIZE = (1280, 720)
 FONT_COLOR = (0, 0, 0)
 BACKGROUND_COLOR = (255, 255, 255)
 SPI_SET_DESKTOP_WALLPAPER = 20
 
-MEMO_FILENAME = "memo.txt"
+DEFAULT_MEMO_FILENAME = "memo.txt"
 OUTPUT_FILENAME = "memo.bmp"
 
 
-def get_monitor_resolutions() -> List[Tuple[int, int]]:
+def get_monitor_resolutions() -> list[tuple[int, int]]:
     """Get resolutions of all connected monitors"""
     import win32api
     import win32con
@@ -58,7 +59,7 @@ def get_monitor_resolutions() -> List[Tuple[int, int]]:
     return unique_resolutions
 
 
-def update_wallpaper_from_memo(image_size: Tuple[int, int] = IMAGE_SIZE, memo_filename: str = MEMO_FILENAME) -> None:
+def update_wallpaper_from_memo(image_size: tuple[int, int] = DEFAULT_IMAGE_SIZE, memo_filename: str = DEFAULT_MEMO_FILENAME) -> None:
     output_file = DATA_DIR / OUTPUT_FILENAME
 
     if output_file.exists():
