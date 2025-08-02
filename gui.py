@@ -58,49 +58,69 @@ def save_and_apply_memo(text_box_content: str, selected_resolution: Tuple[int, i
 
 
 def create_text_box(window: Tk, text: str) -> ScrolledText:
+    # Create a frame for the text area with a label
+    text_frame = ttk.LabelFrame(window, text="Memo Content", padding=10)
+    text_frame.pack(side=TOP, fill=BOTH, expand=True, padx=15, pady=(15, 5))
+    
     text_box = ScrolledText(
-        window,
+        text_frame,
         font=DEFAULT_FONT,
         height=TEXT_BOX_HEIGHT,
         width=TEXT_BOX_WIDTH,
         wrap="char",
+        relief="flat",
+        borderwidth=1
     )
-    text_box.pack(side=TOP, fill=BOTH, expand=True, padx=10, pady=10)
+    text_box.pack(fill=BOTH, expand=True)
     text_box.insert("1.0", text)
     return text_box
 
 
-def create_resolution_selector(window: Tk) -> ttk.Combobox:
-    """Create resolution selection combobox"""
+def create_control_panel(window: Tk, text_box: ScrolledText) -> None:
+    """Create a styled control panel with resolution selector and save button"""
+    # Main control frame
+    control_frame = ttk.Frame(window)
+    control_frame.pack(side=BOTTOM, fill="x", padx=15, pady=10)
+    
+    # Resolution selection frame (left side)
+    resolution_frame = ttk.LabelFrame(control_frame, text="Display Settings", padding=10)
+    resolution_frame.pack(side=LEFT, fill="x", expand=True, padx=(0, 10))
+    
+    # Resolution selector
     resolutions = memo.get_monitor_resolutions()
     resolution_strings = [f"{w}x{h}" for w, h in resolutions]
     
-    frame = ttk.Frame(window)
-    frame.pack(side=BOTTOM, fill="x", padx=10, pady=5)
+    resolution_label = ttk.Label(resolution_frame, text=RESOLUTION_LABEL)
+    resolution_label.pack(side=LEFT, padx=(0, 8))
     
-    label = ttk.Label(frame, text=RESOLUTION_LABEL)
-    label.pack(side=LEFT, padx=(0, 5))
-    
-    combobox = ttk.Combobox(frame, values=resolution_strings, state="readonly", width=15)
-    combobox.pack(side=LEFT)
+    resolution_combobox = ttk.Combobox(
+        resolution_frame, 
+        values=resolution_strings, 
+        state="readonly", 
+        width=12,
+        font=DEFAULT_FONT
+    )
+    resolution_combobox.pack(side=LEFT)
     
     # Set default to first resolution (usually primary monitor)
     if resolution_strings:
-        combobox.set(resolution_strings[0])
+        resolution_combobox.set(resolution_strings[0])
     
-    return combobox
-
-
-def create_save_button(window: Tk, text_box: ScrolledText, resolution_combobox: ttk.Combobox) -> None:
-    button = ttk.Button(
-        window,
+    # Action frame (right side)
+    action_frame = ttk.Frame(control_frame)
+    action_frame.pack(side=RIGHT)
+    
+    # Save button with improved styling
+    save_button = ttk.Button(
+        action_frame,
         text=SAVE_BUTTON_LABEL,
         command=lambda: save_and_apply_memo(
             text_box.get("1.0", "end-1c"),
             get_selected_resolution(resolution_combobox)
         ),
+        width=12
     )
-    button.pack(side=BOTTOM, anchor="e", padx=10, pady=5)
+    save_button.pack(pady=5)
 
 
 def get_selected_resolution(combobox: ttk.Combobox) -> Tuple[int, int]:
@@ -121,14 +141,21 @@ def create_window() -> Tk:
     window = Tk()
     window.title(WINDOW_TITLE)
     window.option_add("*Font", " ".join([DEFAULT_FONT[0], str(DEFAULT_FONT[1])]))
+    
+    # Set minimum window size and make it resizable
+    window.minsize(600, 500)
+    window.geometry("700x600")
+    
+    # Configure window style
+    window.configure(bg='#f0f0f0')
+    
     return window
 
 
 def main() -> None:
     window = create_window()
     text_box = create_text_box(window, read_memo())
-    resolution_combobox = create_resolution_selector(window)
-    create_save_button(window, text_box, resolution_combobox)
+    create_control_panel(window, text_box)
     window.mainloop()
 
 
