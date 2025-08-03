@@ -34,62 +34,27 @@ class TemplateManager:
     def create_default_templates():
         """Create default templates if they don't exist"""
         default_templates = {
-            "Daily ToDo": """Today's Tasks:
+            "Daily Tasks": """Today's Tasks:
 □ 
 □ 
 □ 
-
+□ 
 
 Tomorrow:
 □ 
-□ """,
-            
-            "Meeting Notes": """Meeting: 
-Date: 
-Attendees: 
-
-Agenda:
-1. 
-2. 
-3. 
-
-Action Items:
-□ 
 □ 
 □ """,
             
-            "Weekly Report": """Week of: 
-
-Completed:
-• 
-• 
-• 
-
-In Progress:
-• 
-• 
+            "Weekly Tasks": """This Week:
+□ 
+□ 
+□ 
+□ 
 
 Next Week:
-• 
-• 
- """,
-            
-            "Project Planning": """Project: 
-Deadline: 
-
-Objectives:
-1. 
-2. 
-3. 
-
-Tasks:
 □ 
 □ 
-□ 
-
-Resources Needed:
-• 
-• """
+□ """
         }
         
         for template_name, content in default_templates.items():
@@ -327,7 +292,7 @@ class TaskMemoApp:
             template_frame,
             text="Save Template",
             command=self._save_current_as_template,
-            width=12
+            width=14
         ).pack(side=LEFT)
         
         # Resolution selection frame (center)
@@ -371,7 +336,7 @@ class TaskMemoApp:
             action_frame,
             text=APPLY_BUTTON_LABEL,
             command=self._apply_current_tab_to_wallpaper,
-            width=16
+            width=19
         ).pack(pady=(0, 0))
 
     def _get_selected_resolution(self) -> tuple[int, int]:
