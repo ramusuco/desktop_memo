@@ -54,7 +54,7 @@ class TemplateManager:
 
 class FileManager:
     @staticmethod
-    def get_memo_file_path(filename: str = "memo.txt") -> Path:
+    def get_memo_file_path(filename: str = "memo.txt") -> str:
         """Return the path to Documents\\TaskMemo\\{filename}"""
         return DATA_DIR / filename
 
