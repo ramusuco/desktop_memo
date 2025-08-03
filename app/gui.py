@@ -1,63 +1,26 @@
 from __future__ import annotations
 
-from pathlib import Path
 from tkinter import Tk, BOTH, TOP, BOTTOM, LEFT, RIGHT, messagebox, simpledialog
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-import memo
+from . import memo
+from .config import (
+    DATA_DIR, TEMPLATES_DIR, MAX_FILES, DEFAULT_FILE_NAMES,
+    WINDOW_TITLE, DEFAULT_FONT, TEXT_BOX_HEIGHT, TEXT_BOX_WIDTH,
+    SAVE_BUTTON_LABEL, APPLY_BUTTON_LABEL, RESOLUTION_LABEL, LINE_LENGTH
+)
+from .templates import DEFAULT_TEMPLATES
 
-# Paths and filenames
-DATA_DIR = Path.home() / "Documents" / "TaskMemo"
+# Ensure directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-TEMPLATES_DIR = DATA_DIR / "templates"
 TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
-
-# Multi-file support
-MAX_FILES = 5
-DEFAULT_FILE_NAMES = [f"memo_{i+1}.txt" for i in range(MAX_FILES)]
-
-# UI constants
-WINDOW_TITLE = "Task Memo"
-DEFAULT_FONT = ("Meiryo", 10)
-TEXT_BOX_HEIGHT = 18
-TEXT_BOX_WIDTH = 60  # Slightly wider for better readability with wrap=none
-SAVE_BUTTON_LABEL = "Save File"
-APPLY_BUTTON_LABEL = "Apply to Wallpaper"
-RESOLUTION_LABEL = "Resolution:"
-
-# Formatting constants
-LINE_LENGTH = 30
 
 
 class TemplateManager:
     @staticmethod
     def create_default_templates():
         """Create default templates if they don't exist"""
-        default_templates = {
-            "Daily Tasks": """Today's Tasks:
-□ 
-□ 
-□ 
-□ 
-
-Tomorrow:
-□ 
-□ 
-□ """,
-            
-            "Weekly Tasks": """This Week:
-□ 
-□ 
-□ 
-□ 
-
-Next Week:
-□ 
-□ 
-□ """
-        }
-        
-        for template_name, content in default_templates.items():
+        for template_name, content in DEFAULT_TEMPLATES.items():
             template_file = TEMPLATES_DIR / f"{template_name}.txt"
             if not template_file.exists():
                 template_file.write_text(content, encoding="utf-8")

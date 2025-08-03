@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
 import ctypes
 from PIL import Image, ImageDraw, ImageFont
+from .config import (
+    DATA_DIR, FONT_PATH, FONT_SIZE, DEFAULT_IMAGE_SIZE,
+    FONT_COLOR, BACKGROUND_COLOR, TEXT_MARGIN_LEFT, TEXT_MARGIN_RIGHT,
+    TEXT_MARGIN_TOP, SPI_SET_DESKTOP_WALLPAPER, DEFAULT_MEMO_FILENAME,
+    OUTPUT_FILENAME
+)
 
-DATA_DIR = Path.home() / "Documents" / "TaskMemo"
+# Ensure directory exists
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-FONT_PATH = Path(r"C:\Windows\Fonts\meiryob.ttc")
-FONT_SIZE = 36
-DEFAULT_IMAGE_SIZE = (1280, 720)
-FONT_COLOR = (0, 0, 0)
-BACKGROUND_COLOR = (255, 255, 255)
-TEXT_MARGIN_LEFT = 200
-TEXT_MARGIN_RIGHT = 50
-TEXT_MARGIN_TOP = 50
-SPI_SET_DESKTOP_WALLPAPER = 20
-
-DEFAULT_MEMO_FILENAME = "memo.txt"
-OUTPUT_FILENAME = "memo.bmp"
 
 
 def get_monitor_resolutions() -> list[tuple[int, int]]:

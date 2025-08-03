@@ -49,7 +49,10 @@ A task management application that displays memos on desktop wallpaper.
 ## Development
 
 ### Generate exe
-pyinstaller --onefile --noconsole --icon=app.ico --name "DesktopMemo" .\gui.py
+pyinstaller --onefile --noconsole --icon=app.ico --name "DesktopMemo" main.py
+
+### Run application
+python main.py
 
 ### app.ico
 https://freeillust-classic.com/memo-pad-illust#google_vignette
