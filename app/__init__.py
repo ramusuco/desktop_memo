@@ -2,5 +2,5 @@
 
 from .gui import TaskMemoApp
 
-__version__ = "2.0.0"
+__version__ = "2.4.0"
 __all__ = ["TaskMemoApp"]

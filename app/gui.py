@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from tkinter import Tk, BOTH, TOP, BOTTOM, LEFT, RIGHT, messagebox, simpledialog
+from tkinter import Tk, Toplevel, BOTH, TOP, BOTTOM, LEFT, RIGHT, messagebox, simpledialog, IntVar, Canvas
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
+from PIL import ImageTk
 from . import memo
 from .config import (
     DATA_DIR, TEMPLATES_DIR, MAX_FILES, DEFAULT_FILE_NAMES,
@@ -109,6 +110,10 @@ class TaskMemoApp:
         self.status_label = None
         self.template_combobox = None
         self.resolution_combobox = None
+        self.markdown_enabled = True
+        self.preview_window = None
+        self.preview_label = None
+        self.preview_image = None  # Keep reference to prevent garbage collection
 
     def run(self):
         self.window = self._create_window()
@@ -123,8 +128,8 @@ class TaskMemoApp:
         window.option_add("*Font", " ".join([DEFAULT_FONT[0], str(DEFAULT_FONT[1])]))
         
         # Set minimum window size and make it resizable
-        window.minsize(650, 550)
-        window.geometry("750x650")
+        window.minsize(850, 550)
+        window.geometry("900x650")
         
         # Configure window style
         window.configure(bg='#f0f0f0')
@@ -282,10 +287,32 @@ class TaskMemoApp:
         if resolution_strings:
             self.resolution_combobox.set(resolution_strings[0])
         
+        # Markdown settings frame
+        markdown_frame = ttk.LabelFrame(control_frame, text="Markdown", padding=5)
+        markdown_frame.pack(side=LEFT, padx=(5, 5))
+
+        # Markdown checkbox
+        self.markdown_var = IntVar(value=1)
+        markdown_check = ttk.Checkbutton(
+            markdown_frame,
+            text="ON",
+            variable=self.markdown_var,
+            command=self._toggle_markdown
+        )
+        markdown_check.pack(side=LEFT, padx=(0, 3))
+
+        # Preview button
+        ttk.Button(
+            markdown_frame,
+            text="Preview",
+            command=self._show_preview,
+            width=8
+        ).pack(side=LEFT)
+
         # Action frame (right side) - Now with two separate buttons
         action_frame = ttk.LabelFrame(control_frame, text="Actions", padding=12)
         action_frame.pack(side=RIGHT, padx=(5, 0))
-        
+
         # Save file button
         ttk.Button(
             action_frame,
@@ -293,7 +320,7 @@ class TaskMemoApp:
             command=self._save_current_tab,
             width=16
         ).pack(pady=(0, 4))
-        
+
         # Apply to wallpaper button
         ttk.Button(
             action_frame,
@@ -342,17 +369,18 @@ class TaskMemoApp:
         filename, text_box = self._get_current_tab_info()
         content = text_box.get("1.0", "end-1c")
         resolution = self._get_selected_resolution()
-        
+
         # Apply intelligent wrapping and save
         wrapped_content = FileManager.save_memo_file_with_wrapping(content, filename, resolution)
-        
+
         # Update the text box to show the wrapped content
         text_box.delete("1.0", "end")
         text_box.insert("1.0", wrapped_content)
-        
-        # Generate wallpaper
-        memo.update_wallpaper_from_memo(resolution, filename)
-        self._update_status(f"✓ Applied {FileManager.get_file_display_name(filename)} to wallpaper ({resolution[0]}x{resolution[1]}) with auto-wrap")
+
+        # Generate wallpaper with markdown setting
+        memo.update_wallpaper_from_memo(resolution, filename, enable_markdown=self.markdown_enabled)
+        md_status = "with Markdown" if self.markdown_enabled else "plain text"
+        self._update_status(f"✓ Applied {FileManager.get_file_display_name(filename)} to wallpaper ({resolution[0]}x{resolution[1]}) {md_status}")
 
     def _load_selected_template(self):
         """Load selected template into current tab"""
@@ -387,19 +415,83 @@ class TaskMemoApp:
         if not current_content:
             self._update_status("⚠ Cannot save empty content as template")
             return
-        
+
         template_name = simpledialog.askstring(
             "Save Template",
             "Enter template name:",
             initialvalue="My Template"
         )
-        
+
         if template_name:
             try:
                 TemplateManager.save_template(template_name, current_content)
                 self._update_status(f"✓ Template '{template_name}' saved successfully!")
             except Exception as e:
                 self._update_status(f"✗ Failed to save template: {str(e)}")
+
+    def _toggle_markdown(self):
+        """Toggle markdown rendering on/off"""
+        self.markdown_enabled = bool(self.markdown_var.get())
+        status = "enabled" if self.markdown_enabled else "disabled"
+        self._update_status(f"✓ Markdown rendering {status}")
+
+    def _show_preview(self):
+        """Show markdown preview in a separate window"""
+        filename, text_box = self._get_current_tab_info()
+        content = text_box.get("1.0", "end-1c")
+        resolution = self._get_selected_resolution()
+
+        # Generate preview image
+        preview_img = memo.render_markdown_to_image(
+            content,
+            resolution,
+            enable_markdown=self.markdown_enabled
+        )
+
+        # Scale down for preview if image is too large
+        max_preview_width = 800
+        max_preview_height = 600
+        scale = min(
+            max_preview_width / preview_img.width,
+            max_preview_height / preview_img.height,
+            1.0
+        )
+
+        if scale < 1.0:
+            new_width = int(preview_img.width * scale)
+            new_height = int(preview_img.height * scale)
+            preview_img = preview_img.resize((new_width, new_height))
+
+        # Create or update preview window
+        if self.preview_window is None or not self.preview_window.winfo_exists():
+            self.preview_window = Toplevel(self.window)
+            self.preview_window.title("Markdown Preview")
+            self.preview_window.geometry(f"{preview_img.width + 20}x{preview_img.height + 50}")
+
+            # Add scrollable canvas for preview
+            canvas_frame = ttk.Frame(self.preview_window)
+            canvas_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+
+            self.preview_canvas = Canvas(canvas_frame, bg='white')
+            self.preview_canvas.pack(fill=BOTH, expand=True)
+
+            # Refresh button
+            ttk.Button(
+                self.preview_window,
+                text="Refresh",
+                command=self._show_preview
+            ).pack(pady=(0, 10))
+
+        # Convert to PhotoImage and display
+        self.preview_image = ImageTk.PhotoImage(preview_img)
+        self.preview_canvas.delete("all")
+        self.preview_canvas.create_image(0, 0, anchor="nw", image=self.preview_image)
+        self.preview_canvas.config(
+            scrollregion=(0, 0, preview_img.width, preview_img.height)
+        )
+
+        self.preview_window.lift()
+        self._update_status(f"✓ Preview updated for {FileManager.get_file_display_name(filename)}")
 
 
 

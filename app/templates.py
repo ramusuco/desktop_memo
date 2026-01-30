@@ -1,25 +1,35 @@
 """Default templates for DesktopMemo application."""
 
 DEFAULT_TEMPLATES = {
-    "Daily Tasks": """Today's Tasks:
-□ 
-□ 
-□ 
-□ 
+    "Daily Tasks": """# Daily Tasks
 
-Tomorrow:
-□ 
-□ 
-□ """,
-    
-    "Weekly Tasks": """This Week:
-□ 
-□ 
-□ 
-□ 
+## Today
+- **High**:
+- *Medium*:
+- Low:
 
-Next Week:
-□ 
-□ 
-□ """
+## Notes
+>
+
+""",
+
+    "Weekly Tasks": """# Weekly Tasks
+
+## This Week
+| Day | Task | Status |
+|-----|------|--------|
+| Mon |  |  |
+| Tue |  |  |
+| Wed |  |  |
+| Thu |  |  |
+| Fri |  |  |
+
+## Goals
+- **Priority 1**:
+- **Priority 2**:
+- **Priority 3**:
+
+> Reminder:
+
+"""
 }

@@ -38,3 +38,16 @@ TEXT_MARGIN_TOP = 50
 
 # Windows API constants
 SPI_SET_DESKTOP_WALLPAPER = 20
+
+# Markdown style size multipliers (relative to FONT_SIZE)
+# Adjust these values to change the size of each style
+MARKDOWN_SIZE_MULTIPLIERS = {
+    "h1": 1.8,      # Heading 1 (largest)
+    "h2": 1.5,      # Heading 2
+    "h3": 1.2,      # Heading 3
+    "normal": 1.0,  # Normal text
+    "bold": 1.0,    # Bold text
+    "italic": 1.0,  # Italic text
+    "code": 0.9,    # Code (inline and block)
+    "quote": 1.0,   # Quote text
+}
