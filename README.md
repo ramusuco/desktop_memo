@@ -21,3 +21,8 @@ pyinstaller --onefile --noconsole --icon=app.ico --name "DesktopMemo" main.py
 ## Files
 - Memos: `~/Documents/TaskMemo/`
 - Templates: `~/Documents/TaskMemo/templates/`
+
+## Release
+```
+gh release create v{VERSION} exe/ver{VERSION}/DesktopMemo.exe --title "v{VERSION}" --notes "Release notes"
+```
